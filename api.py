@@ -8,7 +8,7 @@ from typing import Generator
 
 import requests
 
-__all__ = ['sleep', 'request', 'run_async']
+__all__ = ['sleep', 'run_async', 'make_async']
 
 
 @dataclass
@@ -48,22 +48,6 @@ def sleep(secs: float):
         yield
 
 
-def request(url: str):
-    result = []
-
-    def _():
-        nonlocal result
-        result = requests.get(url)
-
-    t = threading.Thread(target=_)
-    t.start()
-
-    while t.is_alive():
-        yield sleep(0)
-
-    return result
-
-
 def run_async(*tasks: Generator):
     tasks = [AsyncTask(t) for t in tasks]
     results = []
@@ -82,3 +66,22 @@ def run_async(*tasks: Generator):
                 tasks.remove(t)
 
     return results
+
+
+def make_async(func):
+    def deco(*args, **kwargs):
+        result = []
+
+        def _():
+            nonlocal result
+            result = func(*args, **kwargs)
+
+        t = threading.Thread(target=_)
+        t.start()
+
+        while t.is_alive():
+            yield sleep(0)
+
+        return result
+
+    return deco

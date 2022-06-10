@@ -1,4 +1,8 @@
-from api import run_async, request
+import requests
+
+from api import run_async, make_async
+
+request = make_async(requests.get)
 
 
 def my_task(num: int):
